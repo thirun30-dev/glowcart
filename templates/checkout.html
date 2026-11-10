@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Checkout{% endblock %}
+{% block content %}
+<h1>Checkout</h1>
+{% set f = request.form %}
+<div class="cart-layout">
+  <form method="post" class="panel">
+    <h3>1 · Delivery address</h3>
+    {% for a in addresses %}
+      <label class="addr-opt"><input type="radio" name="address_id" value="{{ a.id }}"
+        {% if (f.address_id or (addresses[0].id|string)) == a.id|string %}checked{% endif %}>
+        <span><b>{{ a.name }}</b> <em class="tag">{{ a.label }}</em><br>{{ a.line }}, {{ a.city }} – {{ a.pincode }} · 📞 {{ a.phone }}</span></label>
+    {% endfor %}
+    <label class="addr-opt"><input type="radio" name="address_id" value="new" {% if not addresses or f.address_id == 'new' %}checked{% endif %}>
+      <span><b>+ Deliver to a new address</b></span></label>
+    <div class="new-addr">
+      <div class="row"><input name="name" placeholder="Full name" value="{{ f.name or user.name }}">
+        <input name="phone" placeholder="10-digit mobile" value="{{ f.phone or user.phone }}" inputmode="numeric"></div>
+      <input name="line" placeholder="House no., street, area" value="{{ f.line }}">
+      <div class="row"><input name="city" placeholder="City" value="{{ f.city }}">
+        <input name="pincode" placeholder="PIN code" value="{{ f.pincode }}" inputmode="numeric"></div>
+      <label><input type="checkbox" name="save_address" value="1" checked> Save this address to my account</label>
+    </div>
+
+    <h3>2 · Payment method</h3>
+    <div class="pay-opts">
+      {% for k, label in methods.items() %}
+        <label class="pay-opt"><input type="radio" name="payment" value="{{ k }}" {% if (f.payment or 'UPI') == k %}checked{% endif %}>
+          <span>{{ {'COD':'💵','UPI':'📱','Card':'💳','NetBanking':'🏦'}[k] }} {{ label }}</span></label>
+      {% endfor %}
+    </div>
+    <button class="btn alt block">Place order · {{ total|inr }}</button>
+  </form>
+  <div class="summary">
+    <h3>Order summary</h3>
+    {% for i in items %}<p class="small">{{ i.qty }} × {{ i.v.name }} <span class="muted">({{ i.v.variant_name }})</span> <b class="right">{{ i.line|inr }}</b></p>{% endfor %}
+    <hr>
+    <p>Items <b class="right">{{ subtotal|inr }}</b></p>
+    <p>Delivery <b class="right">{{ shipping|inr if shipping else 'FREE' }}</b></p>
+    <p class="total">Order total <span class="right">{{ total|inr }}</span></p>
+  </div>
+</div>
+{% endblock %}

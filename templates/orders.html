@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Your orders{% endblock %}
+{% block content %}
+<h1>Your orders</h1>
+{% for o in orders %}
+  <a class="order-row" href="{{ url_for('order_detail', oid=o.id) }}">
+    <span><b>Order #{{ o.id }}</b><br><small class="muted">{{ o.created_at[:10] }} · {{ o.item_count }} item{{ 's' if o.item_count != 1 }}</small></span>
+    <span class="small">{{ o.payment_method }} · {{ o.payment_status }}</span>
+    <span class="status s-{{ o.status|lower }}">{{ o.status }}</span>
+    <b>{{ o.total|inr }}</b>
+  </a>
+{% else %}
+  <p>No orders yet. <a href="{{ url_for('index') }}">Start shopping</a>.</p>
+{% endfor %}
+{% endblock %}

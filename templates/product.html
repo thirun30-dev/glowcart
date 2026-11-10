@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }}{% endblock %}
+{% block content %}
+<nav class="crumbs"><a href="{{ url_for('index') }}">Home</a> › <a href="{{ url_for('index', category=p.category_slug) }}">{{ p.category }}</a> › {{ p.name }}</nav>
+<div class="pdp" data-live-product="{{ p.id }}" data-variant-count="{{ p.variant_count }}">
+  <div id="v-thumb" class="thumb big thumb-{{ p.category_slug }}"><span>{{ p.icon }}</span>
+    {% if p.image_url %}<img src="{{ p.image_url }}" alt="{{ p.name }}" referrerpolicy="no-referrer" onerror="this.remove()">{% endif %}
+    <i class="shade-dot"></i></div>
+  <div class="info">
+    <div class="brand">{{ p.brand }} · {{ p.category }}</div>
+    <h1>{{ p.name }}</h1>
+    <div class="stars">{% if p.review_count %}★ {{ p.avg_rating }} · {{ p.review_count }} rating{{ 's' if p.review_count != 1 }}{% elif p.external_rating %}★ {{ p.external_rating }} <small>{% if p.source == 'amazon' %}{{ '{:,}'.format(p.external_rating_count) ~ ' ' if p.external_rating_count }}ratings on Amazon{% else %}brand rating{% endif %}</small>{% else %}No reviews yet{% endif %}</div>
+    <div class="price big"><span id="v-price"></span> <s id="v-mrp"></s> <em class="save" id="v-off"></em></div>
+    <div class="muted small">Inclusive of all taxes</div>
+
+    <form method="post" action="{{ url_for('cart_add', pid=p.id) }}">
+      <h3>{{ variants[0].kind }}: <span id="v-label" class="muted"></span>
+        {% if variants|length > 1 %}<small class="muted">· {{ variants|length }} {{ 'shades' if variants[0].kind == 'Shade' else 'options' }}</small>{% endif %}</h3>
+      <div class="variants {{ 'shades' if variants[0].kind == 'Shade' else 'sizes' }}">
+        {% for v in variants %}
+          <label class="variant {% if not v.stock %}sold{% endif %}" title="{{ v.name }}{% if not v.stock %} – sold out{% endif %}" data-live-variant="{{ v.id }}">
+            <input type="radio" name="variant_id" value="{{ v.id }}" {% if v.id == selected %}checked{% endif %}
+                   data-name="{{ v.name }}" data-price="{{ v.price }}" data-mrp="{{ v.mrp }}"
+                   data-stock="{{ v.stock }}" data-color="{{ v.color_hex or '' }}">
+            {% if v.kind == 'Shade' %}
+              <span class="swatch" style="background: {{ v.color_hex or '#ccc' }}"></span>
+            {% else %}
+              <span class="size"><b>{{ v.name }}</b><small>{{ v.price|inr }}</small></span>
+            {% endif %}
+          </label>
+        {% endfor %}
+      </div>
+      <p id="v-stock" class="instock"></p>
+      <div class="buy">
+        <select name="qty" id="v-qty" aria-label="Quantity"><option>1</option></select>
+        <button class="btn">Add to cart</button>
+        <button class="btn alt" name="buy_now" value="1">Buy now</button>
+      </div>
+    </form>
+    {% if user %}
+      <form method="post" action="{{ url_for('toggle_wishlist', pid=p.id) }}">
+        <button class="link wish">{{ '♥ In your wishlist' if p.id in wished else '♡ Add to wishlist' }}</button>
+      </form>
+    {% endif %}
+
+    <h3>About this item</h3>
+    <p>{{ p.description }}</p>
+    <ul class="facts">
+      <li><b>Suitable for:</b> {{ p.skin_type }} skin</li>
+      <li><b>Brand:</b> <a href="{{ url_for('index', brand=p.brand) }}">{{ p.brand }}</a>{% if p.product_type %} · <b>Type:</b> <a href="{{ url_for('index', type=p.product_type) }}">{{ p.product_type }}</a>{% endif %}</li>
+      {% if p.source == 'makeup-api' %}
+      <li class="muted small">Product details and shades: real data from the Makeup API{% if p.product_url %} · <a href="{{ p.product_url }}" target="_blank" rel="noopener">brand's product page ↗</a>{% endif %}. Prices are converted to ₹.</li>
+      {% endif %}
+      {% if p.source == 'amazon' %}
+      <li class="muted small">🛒 Live Amazon.in price, last checked {{ p.updated_at[:16] }}{% if p.product_url %} · <a href="{{ p.product_url }}" target="_blank" rel="noopener">see it on Amazon.in ↗</a>{% endif %}</li>
+      {% endif %}
+      <li>🚚 Free delivery on orders over ₹499 · ↩️ 7-day returns · 💵 Cash on delivery available</li>
+    </ul>
+  </div>
+</div>
+
+<section class="reviews">
+  <h2>Customer reviews</h2>
+  {% if can_review %}
+    <form method="post" action="{{ url_for('add_review', pid=p.id) }}" class="review-form">
+      <select name="rating" aria-label="Rating">{% for n in [5,4,3,2,1] %}<option value="{{ n }}">{{ '★' * n }}</option>{% endfor %}</select>
+      <input name="comment" placeholder="Share your experience" maxlength="1000">
+      <button class="btn">Submit</button>
+    </form>
+  {% elif user %}
+    <p class="muted">Buy this product to leave a review.</p>
+  {% endif %}
+  {% for r in reviews %}
+    <div class="review"><b>{{ r.user_name }}</b> <span class="stars">{{ '★' * r.rating }}{{ '☆' * (5 - r.rating) }}</span>
+      <p>{{ r.comment }}</p><small class="muted">{{ r.created_at[:10] }}</small></div>
+  {% else %}<p class="muted">No reviews yet.</p>{% endfor %}
+</section>
+
+{% if related %}
+<section>
+  <h2>You may also like</h2>
+  <div class="grid">{% for p in related %}{% include "_card.html" %}{% endfor %}</div>
+</section>
+{% endif %}
+{% endblock %}

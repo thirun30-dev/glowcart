@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block content %}
+{% if deals %}
+<section class="hero">
+  <div>
+    <h1>Your glow, delivered.</h1>
+    <p>{{ total }} products from {{ brands|length }} brands, including NYX, Maybelline, L'Oréal, Dior and Clinique, in thousands of real shades.</p>
+    <a class="btn alt" href="#all">Shop now</a>
+  </div>
+  <img src="{{ url_for('static', filename='logo.svg') }}" alt="" class="hero-logo">
+</section>
+
+<div class="cat-tiles">
+  {% for c in categories %}
+    <a href="{{ url_for('index', category=c.slug) }}" class="cat-tile thumb-{{ c.slug }}"><span>{{ c.icon }}</span>{{ c.name }}</a>
+  {% endfor %}
+</div>
+
+<div class="brand-chips">
+  {% for b in brands[:14] %}<a href="{{ url_for('index', brand=b.name) }}" class="chip">{{ b.name }}</a>{% endfor %}
+</div>
+
+<h2>🔴 Selling right now <small class="muted live-hint">updates live</small></h2>
+<div class="rail" id="selling-now">
+  {% for p in popular %}{% include "_card.html" %}{% else %}
+    <p class="muted empty-rail">No sales yet today. Products appear here the moment someone buys them.</p>
+  {% endfor %}
+</div>
+
+{% if amazon %}
+<h2>🛒 Live from Amazon.in <small class="muted live-hint">prices follow Amazon</small></h2>
+<div class="rail">{% for p in amazon %}{% include "_card.html" %}{% endfor %}</div>
+{% endif %}
+
+<h2>Today's deals</h2>
+<div class="rail">{% for p in deals %}{% include "_card.html" %}{% endfor %}</div>
+<h2 id="all">All products</h2>
+{% endif %}
+
+<div class="layout">
+  <aside class="filters">
+    <details {% if cat or brand or ptype or skin or min_price or max_price %}open{% endif %}>
+    <summary>Filters &amp; sort</summary>
+    <form>
+      <input type="hidden" name="q" value="{{ q }}">
+      <h3>Category</h3>
+      <select name="category">
+        <option value="">All categories</option>
+        {% for c in categories %}<option value="{{ c.slug }}" {% if cat == c.slug %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+      </select>
+      <h3>Product type</h3>
+      <select name="type">
+        <option value="">All types</option>
+        {% for t in types %}<option value="{{ t.name }}" {% if ptype == t.name %}selected{% endif %}>{{ t.name }} ({{ t.n }})</option>{% endfor %}
+      </select>
+      <h3>Brand</h3>
+      <select name="brand">
+        <option value="">All brands</option>
+        {% for b in brands %}<option value="{{ b.name }}" {% if brand == b.name %}selected{% endif %}>{{ b.name }} ({{ b.n }})</option>{% endfor %}
+      </select>
+      <h3>Skin type</h3>
+      <select name="skin">
+        <option value="">Any</option>
+        {% for s in ['Oily','Dry','Sensitive','Combination'] %}<option {% if skin == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+      <h3>Price (₹)</h3>
+      <div class="row">
+        <input type="number" name="min" placeholder="Min" value="{{ min_price if min_price is not none else '' }}">
+        <input type="number" name="max" placeholder="Max" value="{{ max_price if max_price is not none else '' }}">
+      </div>
+      <h3>Sort by</h3>
+      <select name="sort">
+        {% for k, label in [('relevance','Newest'),('price_asc','Price: low to high'),('price_desc','Price: high to low'),('rating','Avg. customer review'),('discount','Biggest discount')] %}
+          <option value="{{ k }}" {% if sort == k %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn">Apply</button>
+      <a href="{{ url_for('index') }}" class="clear">Clear filters</a>
+    </form>
+    </details>
+  </aside>
+
+  <section>
+    <p class="count">{{ total }} result{{ '' if total == 1 else 's' }}{% if q %} for “{{ q }}”{% endif %}{% if brand %} · {{ brand }}{% endif %}{% if ptype %} · {{ ptype }}{% endif %}
+      {% if pages > 1 %}<span class="muted"> · page {{ page }} of {{ pages }}</span>{% endif %}</p>
+    <div class="grid">
+      {% for p in products %}{% include "_card.html" %}{% else %}
+        <p>No products match. Try a different search, or ask GlowBot 💬</p>
+      {% endfor %}
+    </div>
+    {% if pages > 1 %}
+    <nav class="pager">
+      {% if page > 1 %}<a class="btn" href="{{ url_for('index', page=page - 1, **args_no_page) }}">‹ Previous</a>{% endif %}
+      <span>Page {{ page }} of {{ pages }}</span>
+      {% if page < pages %}<a class="btn" href="{{ url_for('index', page=page + 1, **args_no_page) }}">Next ›</a>{% endif %}
+    </nav>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

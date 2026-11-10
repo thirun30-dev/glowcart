@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Payment{% endblock %}
+{% block content %}
+<div class="panel pay-box">
+  <div class="pay-head">
+    <div><small class="muted">Paying GlowCart for order #{{ order.id }}</small><div class="total">{{ order.total|inr }}</div></div>
+    <span class="secure">🔒 Secure payment</span>
+  </div>
+  <nav class="tabs">
+    {% for k, label in [('UPI','📱 UPI'),('Card','💳 Card'),('NetBanking','🏦 Net Banking')] %}
+      <a href="{{ url_for('pay', oid=order.id, method=k) }}" class="{{ 'active' if method == k }}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+
+  <form method="post" action="{{ url_for('pay', oid=order.id, method=method) }}">
+    {% if method == 'UPI' %}
+      <p>Enter your UPI ID (Google Pay, PhonePe, Paytm, BHIM…)</p>
+      <input name="upi_id" placeholder="yourname@okaxis" value="{{ request.form.upi_id }}" required>
+    {% elif method == 'Card' %}
+      <input name="card_number" placeholder="Card number" inputmode="numeric" autocomplete="cc-number" required>
+      <div class="row">
+        <input name="expiry" placeholder="MM/YY" autocomplete="cc-exp" required>
+        <input name="cvv" placeholder="CVV" inputmode="numeric" type="password" maxlength="4" required>
+      </div>
+      <input name="card_name" placeholder="Name on card" autocomplete="cc-name" required>
+      <p class="muted small">Demo mode: use test card 4111 1111 1111 1111 with any future expiry.</p>
+    {% else %}
+      <select name="bank" required>
+        <option value="">Choose your bank</option>
+        {% for b in banks %}<option>{{ b }}</option>{% endfor %}
+      </select>
+    {% endif %}
+    <button class="btn alt block">Pay {{ order.total|inr }}</button>
+  </form>
+  <p class="muted small center">This is a demo gateway and no money is charged. You can swap in Razorpay or Stripe for real payments.</p>
+  <p class="center"><a href="{{ url_for('order_detail', oid=order.id) }}">Pay later</a></p>
+</div>
+{% endblock %}

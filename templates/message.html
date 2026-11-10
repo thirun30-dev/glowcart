@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="panel auth"><h1>{{ title }}</h1><p>{{ text }}</p><a class="btn" href="{{ url_for('index') }}">Back to shop</a></div>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<h1>Admin dashboard</h1>
+<div class="stats five">
+  <div><small>Revenue</small><b>{{ stats.revenue|inr }}</b></div>
+  <div><small>Orders</small><b>{{ stats.orders }}</b></div>
+  <div><small>Customers</small><b>{{ stats.customers }}</b></div>
+  <div><small>Products</small><b>{{ stats.products }}</b></div>
+  <div><small>Chat questions</small><b>{{ stats.chats }}</b></div>
+</div>
+
+<div class="panel sync-panel">
+  <div>
+    <h3>🔄 Real product catalogue</h3>
+    <p class="small">Last sync: <b>{{ meta.last_sync or 'never' }}</b> from {{ meta.sync_source or '–' }} ·
+      1 USD = ₹{{ meta.usd_inr or '–' }} ({{ meta.rate_source or '–' }} rate)</p>
+    <p class="small muted">Sync downloads the newest brands, products, shades and prices from the Makeup API and today's exchange rate.
+      Stock levels are kept. Price changes reach shoppers instantly.</p>
+  </div>
+  <form method="post" action="{{ url_for('admin_sync') }}" class="sync-actions">
+    <button class="btn alt">Sync now (live API)</button>
+    <button class="btn" name="offline" value="1">Re-import snapshot</button>
+  </form>
+</div>
+
+<div class="panel sync-panel">
+  <div>
+    <h3>🛒 Amazon.in products <small class="muted">· {{ amazon.count }} in store</small></h3>
+    {% if amazon.provider %}
+      <p class="small">Connected to <b>{{ amazon.provider }}</b> · last {{ meta.amazon_last_action or 'sync' }}:
+        <b>{{ meta.amazon_last_sync or 'never' }}</b> ·
+        {% if amazon.refresh_minutes %}auto-refresh every {{ amazon.refresh_minutes }} min{% else %}auto-refresh off{% endif %}</p>
+      {% if meta.amazon_error %}<p class="small error-text">Last automatic refresh failed: {{ meta.amazon_error }}</p>{% endif %}
+      <p class="small muted">Prices and MRP follow Amazon.in, and changes reach shoppers instantly. Amazon items sell through
+        the normal GlowCart checkout. Stock is demo inventory that goes to 0 when Amazon shows "Currently unavailable".
+        {% if amazon.searches %}Saved searches: {{ amazon.searches|map('first')|join(', ') }}.{% endif %}</p>
+    {% else %}
+      <p class="small">Not connected. Copy <code>.env.example</code> to <code>.env</code>, add your <code>RAPIDAPI_KEY</code>
+        (or Amazon PA-API keys), and restart the app.</p>
+    {% endif %}
+  </div>
+  {% if amazon.provider %}
+  <div class="sync-actions" style="flex-direction:column;align-items:stretch">
+    <form method="post" action="{{ url_for('admin_amazon_import') }}" class="row">
+      <input name="q" placeholder="Search Amazon.in, e.g. lip balm" maxlength="80" aria-label="Amazon search">
+      <select name="category" aria-label="Category"><option value="">Auto category</option>
+        {% for c in categories %}<option value="{{ c.slug }}">{{ c.name }}</option>{% endfor %}</select>
+      <button class="btn alt" style="flex:0 0 auto">Import</button>
+    </form>
+    <form method="post" action="{{ url_for('admin_amazon_refresh') }}" class="sync-actions">
+      <button class="btn">Refresh Amazon prices</button>
+    </form>
+    <small class="muted">Import with an empty search box to add the {{ amazon.defaults|length }} default beauty searches. Each search uses 1 API request.</small>
+  </div>
+  {% endif %}
+</div>
+
+<div class="admin-grid">
+  <div class="panel">
+    <h3>🔴 Live activity <small class="muted">· updates as it happens</small></h3>
+    <ul class="feed" id="admin-feed">
+      {% for f in feed %}
+        <li class="k-{{ f.kind }}"><b>{{ f.kind|capitalize }}</b> · {{ f.product }} ({{ f.variant }})
+          {% if f.kind == 'price' %}₹{{ f.old_price }} → ₹{{ f.new_price }}{% else %}stock {{ f.old_stock if f.old_stock is not none else '–' }} → {{ f.new_stock }}{% endif %}
+          <small class="muted">{{ f.created_at[11:] }}</small></li>
+      {% else %}<li class="muted empty">No activity yet. Place an order or run <code>python simulate_shoppers.py</code>.</li>{% endfor %}
+    </ul>
+
+    <h3>Recent orders</h3>
+    <table>
+      <tr><th>#</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th></tr>
+      {% for o in recent %}
+      <tr>
+        <td><a href="{{ url_for('order_detail', oid=o.id) }}">{{ o.id }}</a></td>
+        <td>{{ o.customer }}</td><td>{{ o.total|inr }}</td><td class="small">{{ o.payment_method }}<br>{{ o.payment_status }}</td>
+        <td>
+          {% if o.status == 'Cancelled' %}<span class="status s-cancelled">Cancelled</span>{% else %}
+          <form method="post" action="{{ url_for('admin_order_status', oid=o.id) }}" class="inline">
+            <select name="status" onchange="this.form.submit()">
+              {% for s in ['Placed','Shipped','Delivered'] %}<option {% if o.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+            </select>
+          </form>{% endif %}
+        </td>
+      </tr>
+      {% else %}<tr><td colspan="5" class="muted">No orders yet.</td></tr>{% endfor %}
+    </table>
+
+    <h3>Best sellers</h3>
+    <table>
+      <tr><th>Product</th><th>Sold</th><th>Revenue</th></tr>
+      {% for t in top %}<tr><td>{{ t.name }}</td><td>{{ t.sold }}</td><td>{{ t.revenue|inr }}</td></tr>
+      {% else %}<tr><td colspan="3" class="muted">No sales yet.</td></tr>{% endfor %}
+    </table>
+
+    <h3>Low stock (under 10)</h3>
+    <table>
+      {% for v in low_stock %}
+      <tr><td>{{ v.product }}<br><small class="muted">{{ v.name }}</small></td><td><b>{{ v.stock }}</b></td>
+        <td><form method="post" action="{{ url_for('admin_restock', vid=v.id) }}" class="inline">
+          <input type="number" name="qty" value="20" min="1" style="width:4rem" aria-label="Quantity"><button class="link">Restock</button></form></td></tr>
+      {% else %}<tr><td class="muted">All varieties well stocked.</td></tr>{% endfor %}
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3>Inventory &amp; prices</h3>
+    <form class="row" method="get">
+      <input name="inv" value="{{ inv_q }}" placeholder="Search product, brand or shade…">
+      <button class="btn" style="flex:0 0 auto">Find</button>
+    </form>
+    {% if inv_q %}
+    <table class="inv">
+      <tr><th>Variety</th><th>Price ₹</th><th>MRP ₹</th><th>Stock</th><th></th></tr>
+      {% for v in inventory %}
+      <tr data-live-variant="{{ v.id }}">
+        <td>{% if v.color_hex %}<span class="mini-swatch" style="background: {{ v.color_hex }}"></span>{% endif %}<b>{{ v.name }}</b><br><small class="muted">{{ v.product }}</small></td>
+        <td colspan="4">
+          <form method="post" action="{{ url_for('admin_edit_variant', vid=v.id) }}" class="inv-form">
+            <input type="number" name="price" value="{{ v.price }}" min="0" aria-label="Price">
+            <input type="number" name="mrp" value="{{ v.mrp }}" min="0" aria-label="MRP">
+            <input type="number" name="stock" value="{{ v.stock }}" min="0" aria-label="Stock" class="lv-stock-input">
+            <button class="link">Save</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}<tr><td class="muted">Nothing found.</td></tr>{% endfor %}
+    </table>
+    <p class="muted small">Tip: open the product in another tab and click Save. The price and stock change there right away.</p>
+    {% endif %}
+
+    <h3>Add product</h3>
+    <form method="post" action="{{ url_for('admin_add_product') }}">
+      <input name="name" placeholder="Product name" required>
+      <textarea name="description" placeholder="Description" rows="2"></textarea>
+      <input name="tags" placeholder="Chatbot keywords, e.g. acne, oily, serum">
+      <div class="row">
+        <select name="category_id">{% for c in categories %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select>
+        <select name="brand_id">{% for b in brands %}<option value="{{ b.id }}">{{ b.name }}</option>{% endfor %}</select>
+      </div>
+      <div class="row">
+        <select name="skin_type">{% for s in ['All','Oily','Dry','Sensitive','Combination'] %}<option>{{ s }}</option>{% endfor %}</select>
+        <select name="kind"><option value="Size">Varieties are sizes</option><option value="Shade">Varieties are shades</option></select>
+      </div>
+      <textarea name="variants" rows="4" required placeholder="One variety per line: Name, price, MRP, stock[, #colour]
+30 ml, 499, 699, 40
+Ruby Red, 499, 699, 20, #9b111e"></textarea>
+      <button class="btn alt">Add product</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

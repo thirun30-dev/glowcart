@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="GlowCart logo">
+  <defs>
+    <linearGradient id="gc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff8fb8"/>
+      <stop offset="1" stop-color="#c2185b"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#gc)"/>
+  <!-- lipstick -->
+  <rect x="25" y="34" width="14" height="16" rx="2" fill="#2a1b2e"/>
+  <rect x="27" y="29" width="10" height="6" rx="1" fill="#f6b93b"/>
+  <path d="M28 29 V19 Q28 14 36 12 V29 Z" fill="#fff"/>
+  <!-- sparkle -->
+  <path d="M46 14 l1.6 4.4 4.4 1.6 -4.4 1.6 -1.6 4.4 -1.6 -4.4 -4.4 -1.6 4.4 -1.6z" fill="#fff"/>
+  <path d="M16 22 l1 2.6 2.6 1 -2.6 1 -1 2.6 -1 -2.6 -2.6 -1 2.6 -1z" fill="#ffe3ec"/>
+</svg>

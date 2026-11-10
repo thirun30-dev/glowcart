@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Order #{{ order.id }}{% endblock %}
+{% block content %}
+<h1>Order #{{ order.id }} <span class="status s-{{ order.status|lower }}">{{ order.status }}</span></h1>
+<p class="muted">Placed {{ order.created_at }}</p>
+
+{% if order.status != 'Cancelled' %}
+{% set steps = ['Placed', 'Shipped', 'Delivered'] %}
+<ol class="tracker">
+  {% for s in steps %}<li class="{{ 'done' if steps.index(s) <= steps.index(order.status) }}">{{ s }}</li>{% endfor %}
+</ol>
+{% endif %}
+
+<div class="cart-layout">
+  <div class="panel">
+    {% for i in items %}
+      <div class="cart-row">
+        <div class="thumb small thumb-{{ i.slug }}"><span>{{ i.icon }}</span></div>
+        <div class="grow"><a href="{{ url_for('product', pid=i.product_id, v=i.variant_id) }}">{{ i.name }}</a>
+          <div class="muted small">{% if i.color_hex %}<span class="mini-swatch" style="background: {{ i.color_hex }}"></span>{% endif %}{{ i.variant_name }} · {{ i.quantity }} × {{ i.unit_price|inr }}</div></div>
+        <b>{{ (i.quantity * i.unit_price)|inr }}</b>
+      </div>
+    {% endfor %}
+    <p>Items <b class="right">{{ order.subtotal|inr }}</b></p>
+    <p>Delivery <b class="right">{{ order.shipping|inr if order.shipping else 'FREE' }}</b></p>
+    <p class="total">Total <span class="right">{{ order.total|inr }}</span></p>
+  </div>
+  <div class="summary">
+    <h3>Payment</h3>
+    <p>{{ order.payment_method }} · <b>{{ order.payment_status }}</b></p>
+    {% for pmt in payments %}<p class="small muted">{{ pmt.status }} {{ pmt.amount|inr }} · {{ pmt.reference }}</p>{% endfor %}
+    {% if order.payment_status == 'Pending' and order.status != 'Cancelled' and order.user_id == user.id %}
+      <a class="btn alt block" href="{{ url_for('pay', oid=order.id) }}">Complete payment</a>
+    {% endif %}
+    <h3>Delivering to</h3>
+    <p><b>{{ order.ship_name }}</b><br>{{ order.ship_address }}<br>📞 {{ order.ship_phone }}</p>
+    {% if order.status == 'Placed' and order.user_id == user.id %}
+      <form method="post" action="{{ url_for('cancel_order', oid=order.id) }}"><button class="btn">Cancel order</button></form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

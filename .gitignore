@@ -1,0 +1,13 @@
+# secrets – set these in Vercel's Environment Variables instead
+.env
+
+# local database (rebuilt automatically from data/ on first run and on each Vercel cold start)
+*.db
+*.db-journal
+
+__pycache__/
+*.pyc
+.venv/
+venv/
+.vercel/
+.vscode/

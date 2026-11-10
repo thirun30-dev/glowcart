@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Create account' if mode == 'register' else 'Sign in' }}{% endblock %}
+{% block content %}
+<form method="post" class="panel auth">
+  <img src="{{ url_for('static', filename='logo.svg') }}" alt="GlowCart" width="56" height="56" class="auth-logo">
+  <h1>{{ 'Create account' if mode == 'register' else 'Sign in' }}</h1>
+  {% if mode == 'register' %}<input name="name" placeholder="Your name" required>{% endif %}
+  <input name="email" type="email" placeholder="Email" required autocomplete="email">
+  <input name="password" type="password" placeholder="Password" required minlength="6">
+  <button class="btn alt block">{{ 'Create account' if mode == 'register' else 'Sign in' }}</button>
+  {% if mode == 'register' %}
+    <p>Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
+  {% else %}
+    <p>New to GlowCart? <a href="{{ url_for('register') }}">Create an account</a></p>
+    <p class="muted small">Demo: demo@glowcart.com / demo123 · Admin: admin@glowcart.com / admin123</p>
+  {% endif %}
+</form>
+{% endblock %}

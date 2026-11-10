@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Cart{% endblock %}
+{% block content %}
+<h1>Shopping cart</h1>
+{% if items %}
+<div class="cart-layout">
+  <div>
+    {% for i in items %}
+      <div class="cart-row" data-live-variant="{{ i.v.variant_id }}" data-qty="{{ i.qty }}">
+        <div class="thumb small thumb-{{ i.v.category_slug }}"><span>{{ i.v.icon }}</span>
+          {% if i.v.image_url %}<img src="{{ i.v.image_url }}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">{% endif %}</div>
+        <div class="grow">
+          <a href="{{ url_for('product', pid=i.v.product_id, v=i.v.variant_id) }}">{{ i.v.name }}</a>
+          <div class="muted small">{{ i.v.brand }} · {{ i.v.kind }}:
+            {% if i.v.color_hex %}<span class="mini-swatch" style="background: {{ i.v.color_hex }}"></span>{% endif %}{{ i.v.variant_name }}
+            · {{ i.v.price|inr }} each</div>
+          <div class="lv-warn small"></div>
+          <form method="post" action="{{ url_for('cart_update', vid=i.v.variant_id) }}" class="inline">
+            <input type="number" name="qty" value="{{ i.qty }}" min="0" max="{{ i.v.stock }}" aria-label="Quantity">
+            <button class="link">Update</button>
+          </form>
+          <form method="post" action="{{ url_for('cart_update', vid=i.v.variant_id) }}" class="inline">
+            <input type="hidden" name="qty" value="0"><button class="link">Delete</button>
+          </form>
+        </div>
+        <b>{{ i.line|inr }}</b>
+      </div>
+    {% endfor %}
+  </div>
+  <div class="summary">
+    {% if shipping %}<p class="muted">Add {{ (free_over - subtotal)|inr }} more for FREE delivery.</p>{% else %}<p class="instock">✓ Your order qualifies for FREE delivery.</p>{% endif %}
+    <p>Subtotal ({{ items|sum(attribute='qty') }} items) <b class="right">{{ subtotal|inr }}</b></p>
+    <p>Delivery <b class="right">{{ shipping|inr if shipping else 'FREE' }}</b></p>
+    <p class="total">Total <span class="right">{{ total|inr }}</span></p>
+    <a class="btn alt block" href="{{ url_for('checkout') }}">Proceed to buy</a>
+  </div>
+</div>
+{% else %}
+  <p>Your cart is empty. <a href="{{ url_for('index') }}">Start shopping</a>.</p>
+{% endif %}
+{% endblock %}

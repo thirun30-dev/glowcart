@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Beauty & Cosmetics Online{% endblock %} · GlowCart</title>
+  <link rel="icon" href="{{ url_for('static', filename='logo.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% if request.endpoint == 'index' %}
+<!-- Start screen: logo + name -->
+<div id="splash" aria-hidden="true">
+  <img src="{{ url_for('static', filename='logo.svg') }}" alt="">
+  <div class="splash-name">Glow<span>Cart</span></div>
+  <div class="splash-tag">Beauty, delivered.</div>
+</div>
+{% endif %}
+
+<header class="topbar">
+  <a class="logo" href="{{ url_for('index') }}">
+    <img src="{{ url_for('static', filename='logo.svg') }}" alt="" width="36" height="36">
+    <span class="logo-text">Glow<span>Cart</span></span>
+  </a>
+  <form class="search" action="{{ url_for('index') }}" role="search">
+    <select name="category" aria-label="Category">
+      <option value="">All</option>
+      {% for c in categories %}
+        <option value="{{ c.slug }}" {% if request.args.get('category') == c.slug %}selected{% endif %}>{{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <input name="q" placeholder="Search serums, lipsticks, brands…" value="{{ request.args.get('q', '') }}" aria-label="Search">
+    <button aria-label="Search">🔍</button>
+  </form>
+  <nav class="account">
+    {% if user %}
+      <a href="{{ url_for('account') }}" class="acct"><small>Hello, {{ user.name.split()[0] }}</small><b>Account</b></a>
+      <a href="{{ url_for('orders') }}"><small>Returns</small><b>&amp; Orders</b></a>
+      <a href="{{ url_for('wishlist') }}"><small>Saved</small><b>♡ Wishlist</b></a>
+      {% if user.is_admin %}<a href="{{ url_for('admin') }}"><small>Store</small><b>Admin</b></a>{% endif %}
+    {% else %}
+      <a href="{{ url_for('login') }}"><small>Hello, sign in</small><b>Account</b></a>
+    {% endif %}
+    <a class="cart-link" href="{{ url_for('cart') }}">🛒 <b>{{ cart_count }}</b> Cart</a>
+    <span id="live-badge" class="live-badge" title="Prices and stock update in real time">● LIVE</span>
+  </nav>
+</header>
+<nav class="catbar">
+  {% for c in categories %}
+    <a href="{{ url_for('index', category=c.slug) }}">{{ c.icon }} {{ c.name }}</a>
+  {% endfor %}
+  {% if user %}<a href="{{ url_for('logout') }}" class="signout">Sign out</a>{% endif %}
+</nav>
+
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer>
+  <img src="{{ url_for('static', filename='logo.svg') }}" alt="" width="28" height="28">
+  <div>GlowCart Beauty · Free delivery over ₹499 · 7-day returns · COD, UPI, cards &amp; net banking</div>
+</footer>
+
+<!-- AI chat bot -->
+<button id="chat-fab" aria-label="Chat with GlowBot">💬<span>Ask GlowBot</span></button>
+<section id="chat-panel" aria-label="GlowBot chat">
+  <header>
+    <img src="{{ url_for('static', filename='logo.svg') }}" alt="" width="28" height="28">
+    <div><b>GlowBot</b><small>AI beauty assistant · {{ ai_engine }}</small></div>
+    <button id="chat-close" aria-label="Close">✕</button>
+  </header>
+  <div id="chat-log"></div>
+  <div class="chips">
+    <button class="chip-q">Serum for oily skin under 600</button>
+    <button class="chip-q">Lipstick shades</button>
+    <button class="chip-q">Hair fall</button>
+    <button class="chip-q">Track my order</button>
+  </div>
+  <form id="chat-form">
+    <input id="chat-input" placeholder="Ask about products, shades, orders…" autocomplete="off" maxlength="500">
+    <button aria-label="Send">➤</button>
+  </form>
+</section>
+<div id="toasts" aria-live="polite"></div>
+<script src="{{ url_for('static', filename='chat.js') }}"></script>
+<script src="{{ url_for('static', filename='live.js') }}"></script>
+</body>
+</html>

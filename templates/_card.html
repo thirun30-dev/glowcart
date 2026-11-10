@@ -1,0 +1,35 @@
+{# Product card – expects `p` and optional `wished` set. data-live-* lets live.js update it in real time. #}
+<div class="card" data-live-product="{{ p.id }}" data-variant-count="{{ p.variant_count }}">
+  <a href="{{ url_for('product', pid=p.id) }}" class="thumb thumb-{{ p.category_slug }}">
+    <span>{{ p.icon }}</span>
+    {% if p.image_url %}<img src="{{ p.image_url }}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">{% endif %}
+    {% if p.mrp > p.price %}<em class="badge lp-off">{{ p|off }}% off</em>{% endif %}
+  </a>
+  {% if user %}
+  <form method="post" action="{{ url_for('toggle_wishlist', pid=p.id) }}" class="heart">
+    <button title="{{ 'Remove from' if wished and p.id in wished else 'Add to' }} wishlist">{{ '♥' if wished and p.id in wished else '♡' }}</button>
+  </form>
+  {% endif %}
+  <div class="brand">{{ p.brand }}{% if p.product_type %} · {{ p.product_type }}{% endif %}{% if p.source == 'amazon' %} <span class="amz-tag">Amazon.in price</span>{% endif %}</div>
+  <a class="name" href="{{ url_for('product', pid=p.id) }}">{{ p.name }}</a>
+  <div class="stars">
+    {% if p.review_count %}★ {{ p.avg_rating }} <small>({{ p.review_count }})</small>
+    {% elif p.external_rating %}★ {{ p.external_rating }} <small>{% if p.source == 'amazon' %}{{ '({:,}) '.format(p.external_rating_count) if p.external_rating_count }}on Amazon{% else %}brand rating{% endif %}</small>
+    {% else %}<small>No reviews yet</small>{% endif %}
+  </div>
+  <div class="price">{% if p.variant_count > 1 %}<small>from </small>{% endif %}<span class="lp-price">{{ p.price|inr }}</span>
+    <s class="lp-mrp">{% if p.mrp > p.price %}{{ p.mrp|inr }}{% endif %}</s></div>
+  {% if p.variant_count > 1 %}
+    <div class="shade-strip">
+      <span class="muted small">{{ p.variant_count }} {{ 'shades' if p.variant_kind == 'Shade' else 'options' }}</span>
+    </div>
+  {% endif %}
+  <div class="lp-stock small {{ 'oos' if not p.stock else ('low' if p.stock < 10 else '') }}">{% if not p.stock %}Out of stock{% elif p.stock < 10 %}Only {{ p.stock }} left{% endif %}</div>
+  <div class="lp-action">
+  {% if p.variant_count > 1 %}
+    <a class="btn" href="{{ url_for('product', pid=p.id) }}">{{ 'Choose shade' if p.variant_kind == 'Shade' else 'Choose options' }}</a>
+  {% else %}
+    <form method="post" action="{{ url_for('cart_add', pid=p.id) }}"><button class="btn" {% if not p.stock %}disabled{% endif %}>Add to cart</button></form>
+  {% endif %}
+  </div>
+</div>

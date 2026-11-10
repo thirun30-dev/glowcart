@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Your account{% endblock %}
+{% block content %}
+<h1>Your account</h1>
+<div class="stats">
+  <a href="{{ url_for('orders') }}"><small>Orders</small><b>{{ stats.orders }}</b></a>
+  <div><small>Total spent</small><b>{{ stats.spent|inr }}</b></div>
+  <a href="{{ url_for('wishlist') }}"><small>Wishlist</small><b>{{ wish_count }}</b></a>
+  <div><small>Member since</small><b class="smallb">{{ user.created_at[:10] }}</b></div>
+</div>
+
+<div class="admin-grid">
+  <div class="panel">
+    <h3>Profile</h3>
+    <form method="post">
+      <input type="hidden" name="action" value="profile">
+      <input name="name" value="{{ user.name }}" placeholder="Name" required>
+      <input value="{{ user.email }}" disabled>
+      <input name="phone" value="{{ user.phone }}" placeholder="10-digit mobile" inputmode="numeric">
+      <button class="btn">Save profile</button>
+    </form>
+    <h3>Change password</h3>
+    <form method="post">
+      <input type="hidden" name="action" value="password">
+      <input type="password" name="current" placeholder="Current password" required>
+      <input type="password" name="new" placeholder="New password (min 6)" required minlength="6">
+      <button class="btn">Change password</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h3>Saved addresses</h3>
+    {% for a in addresses %}
+      <div class="addr">
+        <b>{{ a.name }}</b> <em class="tag">{{ a.label }}</em> {% if a.is_default %}<em class="tag def">Default</em>{% endif %}
+        <div class="small">{{ a.line }}, {{ a.city }} – {{ a.pincode }} · 📞 {{ a.phone }}</div>
+        <form method="post" class="inline"><input type="hidden" name="action" value="delete_address"><input type="hidden" name="id" value="{{ a.id }}"><button class="link">Remove</button></form>
+        {% if not a.is_default %}<form method="post" class="inline"><input type="hidden" name="action" value="default_address"><input type="hidden" name="id" value="{{ a.id }}"><button class="link">Set as default</button></form>{% endif %}
+      </div>
+    {% else %}<p class="muted">No saved addresses yet.</p>{% endfor %}
+
+    <h3>Add address</h3>
+    <form method="post">
+      <input type="hidden" name="action" value="add_address">
+      <div class="row"><input name="name" placeholder="Full name" value="{{ user.name }}" required>
+        <select name="label"><option>Home</option><option>Work</option><option>Other</option></select></div>
+      <input name="phone" placeholder="10-digit mobile" value="{{ user.phone }}" required inputmode="numeric">
+      <input name="line" placeholder="House no., street, area" required>
+      <div class="row"><input name="city" placeholder="City" required><input name="pincode" placeholder="PIN code" required inputmode="numeric"></div>
+      <button class="btn alt">Save address</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
